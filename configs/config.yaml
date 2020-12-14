@@ -1,0 +1,7 @@
+listen: :5000
+db:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: docker
+  name: DbTp
