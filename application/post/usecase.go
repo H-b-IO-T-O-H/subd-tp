@@ -1,13 +1,12 @@
-package thread
+package post
 
 import (
 	"subd/application/common/errors"
 	"subd/application/common/models"
 )
 
-type IUseCaseThread interface {
-	CreateThread(thread models.Thread) (models.Thread, errors.Err)
-	GetBySlugOrId(slug string, id int) (models.Thread, errors.Err)
-	UpdateBySlugOrId(threadNew models.Thread, slugId string) (models.Thread, errors.Err)
-	CreateVote(vote models.Vote) (models.Thread, errors.Err)
+type IUseCasePost interface {
+	CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err)
+	GetPost(params models.PostGetParams) (models.PostFull, errors.Err)
+	UpdatePost(postUpdate models.PostUpdate) (models.Post, errors.Err)
 }

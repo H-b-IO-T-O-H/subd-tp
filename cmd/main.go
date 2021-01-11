@@ -2,6 +2,7 @@ package main
 
 import (
 	yamlConfig "github.com/rowdyroad/go-yaml-config"
+	api "subd/application"
 )
 
 func main() {

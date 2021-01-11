@@ -2,50 +2,63 @@ package delivery
 
 import (
 	"github.com/buaazp/fasthttprouter"
+	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
+	"strconv"
 	"subd/application/common/errors"
 	"subd/application/common/models"
 	"subd/application/common/utils"
-	"subd/application/forum"
+	"subd/application/thread"
 )
 
-type ForumHandler struct {
-	usecase forum.IUseCaseForum
+const BySlug = -1
+
+type ThreadHandler struct {
+	usecase thread.IUseCaseThread
 }
 
-func NewForumHandler(router *fasthttprouter.Router, usecase forum.IUseCaseForum) {
-	f := ForumHandler{
+func NewThreadHandler(router *fasthttprouter.Router, usecase thread.IUseCaseThread) {
+	f := ThreadHandler{
 		usecase: usecase,
 	}
-	router.POST("/forum/create", f.ForumCreate)
-	router.GET("/forum/:slug/details", f.ForumGetDetails)
-	//router.POST("/forum/:slug/create", f.ForumThreadCreate)
-	router.GET("/forum/:slug/users", f.ForumGetUsers)
-	router.GET("/forum/:slug/threads", f.ForumGetThreads)
+	router.POST("/api/forum/:slug/create", f.ThreadCreate)
+	router.GET("/api/thread/:slug_or_id/details", f.ThreadDetails)
+	router.POST("/api/thread/:slug_or_id/details", f.ThreadUpdate)
+	router.POST("/api/thread/:slug_or_id/vote", f.ThreadVote)
+	router.GET("/api/thread/:slug_or_id/posts", f.ThreadPosts)
 }
 
-func (f ForumHandler) ForumCreate(ctx *fasthttp.RequestCtx) {
-	var buf models.Forum
+func (t ThreadHandler) ThreadCreate(ctx *fasthttp.RequestCtx) {
+	var buf models.Thread
 
-	body := ctx.PostBody()
-	if err := buf.UnmarshalJSON(body); err != nil {
+	if err := buf.UnmarshalJSON(ctx.PostBody()); err != nil {
 		ctx.SetStatusCode(errors.BadRequestCode)
 		ctx.SetBody(errors.BadRequestMsg)
 		return
 	}
-
-	forumNew, err := f.usecase.CreateForum(buf)
+	buf.Forum = utils.GetSlugFromCtx(ctx)
+	wasEdited := false
+	if buf.Slug == "" {
+		buf.Slug = buf.Forum + uuid.New().String()
+		wasEdited = true
+	}
+	threadNew, err := t.usecase.CreateThread(buf)
+	if wasEdited {
+		threadNew.Slug = ""
+	}
 	if err != nil {
 		if err.Code() == errors.ConflictCode {
-			forumNew, err = f.usecase.GetBySlug(buf.Slug)
+			threadNew, err = t.usecase.GetBySlugOrId(buf.Slug, BySlug)
 			ctx.SetStatusCode(errors.ConflictCode)
 		} else {
 			err.SetErrToCtx(ctx)
 			return
 		}
+	} else {
+		ctx.SetStatusCode(201)
 	}
 
-	resp, errMarshal := forumNew.MarshalJSON()
+	resp, errMarshal := threadNew.MarshalJSON()
 	if errMarshal != nil || err != nil {
 		ctx.SetStatusCode(errors.ServerErrorCode)
 		ctx.SetBody(errors.ServerErrorMsg)
@@ -54,21 +67,22 @@ func (f ForumHandler) ForumCreate(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(resp)
 }
 
-func (f ForumHandler) ForumThreadCreate(ctx *fasthttp.RequestCtx) {
-	ctx.SetStatusCode(fasthttp.StatusOK)
-	ctx.SetBodyString("Ok")
-}
-
-func (f ForumHandler) ForumGetDetails(ctx *fasthttp.RequestCtx) {
-	slug := utils.GetSlugFromCtx(ctx)
-	//TODO: slug-pattern ???
-
-	forumOld, err := f.usecase.GetBySlug(slug)
+func (t ThreadHandler) ThreadDetails(ctx *fasthttp.RequestCtx) {
+	var (
+		threadOld models.Thread
+		err       errors.Err
+	)
+	slugId := utils.GetSlugOrIdFromCtx(ctx)
+	if id, _ := strconv.Atoi(slugId); id != 0 {
+		threadOld, err = t.usecase.GetBySlugOrId("", id)
+	} else {
+		threadOld, err = t.usecase.GetBySlugOrId(slugId, BySlug)
+	}
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	resp, errMarshal := forumOld.MarshalJSON()
+	resp, errMarshal := threadOld.MarshalJSON()
 	if errMarshal != nil {
 		ctx.SetStatusCode(errors.ServerErrorCode)
 		ctx.SetBody(errors.ServerErrorMsg)
@@ -77,19 +91,63 @@ func (f ForumHandler) ForumGetDetails(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(resp)
 }
 
-func (f ForumHandler) ForumGetThreads(ctx *fasthttp.RequestCtx) {
-	ctx.SetStatusCode(fasthttp.StatusOK)
-	ctx.SetBodyString("Ok")
-}
+func (t ThreadHandler) ThreadUpdate(ctx *fasthttp.RequestCtx) {
+	var buf models.Thread
 
-func (f ForumHandler) ForumGetUsers(ctx *fasthttp.RequestCtx) {
-	query := utils.MakeQuery(ctx)
-	usersList, err := f.usecase.GetUsers(query)
+	if err := buf.UnmarshalJSON(ctx.PostBody()); err != nil {
+		ctx.SetStatusCode(errors.BadRequestCode)
+		ctx.SetBody(errors.BadRequestMsg)
+		return
+	}
+	slugId := utils.GetSlugOrIdFromCtx(ctx)
+	threadNew, err := t.usecase.UpdateBySlugOrId(buf, slugId)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	resp, errMarshal := usersList.MarshalJSON()
+	resp, errMarshal := threadNew.MarshalJSON()
+	if errMarshal != nil {
+		ctx.SetStatusCode(errors.ServerErrorCode)
+		ctx.SetBody(errors.ServerErrorMsg)
+		return
+	}
+	ctx.SetBody(resp)
+}
+
+func (t ThreadHandler) ThreadVote(ctx *fasthttp.RequestCtx) {
+	var buf models.Vote
+	if err := buf.UnmarshalJSON(ctx.PostBody()); err != nil || (buf.Voice != -1 && buf.Voice != 1) {
+		ctx.SetStatusCode(errors.BadRequestCode)
+		ctx.SetBody(errors.BadRequestMsg)
+		return
+	}
+	buf.SlugOrId = utils.GetSlugOrIdFromCtx(ctx)
+	threadVoted, err := t.usecase.CreateVote(buf)
+	if err != nil {
+		err.SetErrToCtx(ctx)
+		return
+	}
+	resp, errMarshal := threadVoted.MarshalJSON()
+	if errMarshal != nil {
+		ctx.SetStatusCode(errors.ServerErrorCode)
+		ctx.SetBody(errors.ServerErrorMsg)
+		return
+	}
+	ctx.SetBody(resp)
+}
+
+func (t ThreadHandler) ThreadPosts(ctx *fasthttp.RequestCtx) {
+	query := utils.MakeQueryPosts(ctx)
+
+	if query.Sort == "" {
+		query.Sort = utils.Flat
+	}
+	posts, err := t.usecase.GetThreadPosts(query)
+	if err != nil {
+		err.SetErrToCtx(ctx)
+		return
+	}
+	resp, errMarshal := posts.MarshalJSON()
 	if errMarshal != nil {
 		ctx.SetStatusCode(errors.ServerErrorCode)
 		ctx.SetBody(errors.ServerErrorMsg)

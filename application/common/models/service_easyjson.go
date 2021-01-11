@@ -58,40 +58,24 @@ func easyjsonCd93bc43EncodeSubdApplicationCommonModels(out *jwriter.Writer, in S
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.UsersCnt != 0 {
+	{
 		const prefix string = ",\"user\":"
-		first = false
 		out.RawString(prefix[1:])
 		out.Int64(int64(in.UsersCnt))
 	}
-	if in.ForumsCnt != 0 {
+	{
 		const prefix string = ",\"forum\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.ForumsCnt))
 	}
-	if in.ThreadsCnt != 0 {
+	{
 		const prefix string = ",\"thread\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.ThreadsCnt))
 	}
-	if in.PostsCnt != 0 {
+	{
 		const prefix string = ",\"post\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.PostsCnt))
 	}
 	out.RawByte('}')

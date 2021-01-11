@@ -3,40 +3,25 @@ package usecase
 import (
 	"subd/application/common/errors"
 	"subd/application/common/models"
-	"subd/application/thread"
-	"subd/application/thread/delivery"
+	"subd/application/post"
 )
 
-type threadUseCase struct {
-	repos thread.IRepositoryThread
+type PostUseCase struct {
+	reposPost post.IRepositoryPost
 }
 
-func NewThreadUseCase(repos thread.IRepositoryThread) thread.IUseCaseThread {
-	return &threadUseCase{repos: repos}
+func NewPostUseCase(repPost post.IRepositoryPost) post.IUseCasePost {
+	return &PostUseCase{reposPost: repPost}
 }
 
-func (t threadUseCase) CreateThread(thread models.Thread) (models.Thread, errors.Err) {
-	id, err := t.repos.CreateThread(thread)
-	if err != nil {
-		return models.Thread{}, err
-	}
-	thread.ID = id
-	return thread, nil
+func (p PostUseCase) GetPost(params models.PostGetParams) (models.PostFull, errors.Err) {
+	return p.reposPost.GetFull(params)
 }
 
-func (t threadUseCase) GetBySlugOrId(slug string, id int) (models.Thread, errors.Err) {
-	if id == delivery.BySlug {
-		return t.repos.GetBySlug(slug)
-	}
-	return t.repos.GetById(id)
+func (p PostUseCase) CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err) {
+	return p.reposPost.CreatePost(posts, slugId)
 }
 
-
-func (t threadUseCase) UpdateBySlugOrId(threadNew models.Thread, slugId string) (models.Thread, errors.Err) {
-	return t.repos.UpdateBySlugOrId(threadNew, slugId)
-}
-
-
-func (t threadUseCase) CreateVote(vote models.Vote) (models.Thread, errors.Err) {
-	return t.repos.UpsertVote(vote)
+func (p PostUseCase) UpdatePost(postUpdate models.PostUpdate) (models.Post, errors.Err) {
+	return p.reposPost.UpdatePost(postUpdate)
 }

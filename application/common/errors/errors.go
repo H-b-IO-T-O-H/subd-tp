@@ -1,4 +1,4 @@
-package models
+package errors
 
 import (
 	"fmt"
@@ -9,7 +9,10 @@ import (
 var InvalidNickname = []byte("invalid user nickname")
 var BadRequestMsg = []byte("required fields are not filled in")
 var ServerErrorMsg = []byte("something went wrong")
-var NotFoundMsg = []byte("can't find this user")
+var UserNotFoundMsg = []byte("can't find this user")
+var ForumNotFoundMsg = []byte("can't find forum by this slug")
+var ThreadNotFoundMsg = []byte("can't find thread by this slug")
+var PostNotFoundMsg = []byte("can't find post by this id")
 var UserAlreadyExists = []byte("user already exists")
 var BadRequestCode = 400
 var NotFoundCode = 404
@@ -42,13 +45,17 @@ func (r RespErr) SetErrToCtx(ctx *fasthttp.RequestCtx) {
 }
 
 func UserNotFound(errMsg string) bool {
-	return strings.Contains(errMsg, "user")
+	return strings.Contains(errMsg, "violates foreign key")
 }
 
-func UserExists(errMsg string) bool {
+func RecordExists(errMsg string) bool {
 	return strings.Contains(errMsg, "duplicate")
 }
 
 func EmptyResult(errMsg string) bool {
 	return strings.Contains(errMsg, "no rows")
+}
+
+func ForumNotFound(errMsg string) bool {
+	return strings.Contains(errMsg, "null value in column")
 }

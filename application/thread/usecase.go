@@ -1,13 +1,14 @@
-package forum
+package thread
 
 import (
 	"subd/application/common/errors"
 	"subd/application/common/models"
 )
 
-type IUseCaseForum interface {
-	CreateForum(forumNew models.Forum) (models.Forum, errors.Err)
-	GetBySlug(slug string) (models.Forum, errors.Err)
-	GetUsers(uri models.QueryParams) (models.UsersList, errors.Err)
-	//GetThreads(uri models.UriParams) ([]models.User, errors.Err)
+type IUseCaseThread interface {
+	CreateThread(thread models.Thread) (models.Thread, errors.Err)
+	GetBySlugOrId(slug string, id int) (models.Thread, errors.Err)
+	UpdateBySlugOrId(threadNew models.Thread, slugId string) (models.Thread, errors.Err)
+	CreateVote(vote models.Vote) (models.Thread, errors.Err)
+	GetThreadPosts(params models.QueryPostParams) (models.PostsList, errors.Err)
 }

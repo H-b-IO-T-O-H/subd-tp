@@ -20,76 +20,44 @@ var (
 func easyjson2d00218DecodeSubdApplicationCommonModels(in *jlexer.Lexer, out *ThreadsList) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
 		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "Threads":
-			if in.IsNull() {
-				in.Skip()
-				out.Threads = nil
+		*out = nil
+	} else {
+		in.Delim('[')
+		if *out == nil {
+			if !in.IsDelim(']') {
+				*out = make(ThreadsList, 0, 0)
 			} else {
-				in.Delim('[')
-				if out.Threads == nil {
-					if !in.IsDelim(']') {
-						out.Threads = make([]Thread, 0, 0)
-					} else {
-						out.Threads = []Thread{}
-					}
-				} else {
-					out.Threads = (out.Threads)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v1 Thread
-					(v1).UnmarshalEasyJSON(in)
-					out.Threads = append(out.Threads, v1)
-					in.WantComma()
-				}
-				in.Delim(']')
+				*out = ThreadsList{}
 			}
-		default:
-			in.SkipRecursive()
+		} else {
+			*out = (*out)[:0]
 		}
-		in.WantComma()
+		for !in.IsDelim(']') {
+			var v1 Thread
+			(v1).UnmarshalEasyJSON(in)
+			*out = append(*out, v1)
+			in.WantComma()
+		}
+		in.Delim(']')
 	}
-	in.Delim('}')
 	if isTopLevel {
 		in.Consumed()
 	}
 }
 func easyjson2d00218EncodeSubdApplicationCommonModels(out *jwriter.Writer, in ThreadsList) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"Threads\":"
-		out.RawString(prefix[1:])
-		if in.Threads == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
-			out.RawByte('[')
-			for v2, v3 := range in.Threads {
-				if v2 > 0 {
-					out.RawByte(',')
-				}
-				(v3).MarshalEasyJSON(out)
+	if in == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+		out.RawString("null")
+	} else {
+		out.RawByte('[')
+		for v2, v3 := range in {
+			if v2 > 0 {
+				out.RawByte(',')
 			}
-			out.RawByte(']')
+			(v3).MarshalEasyJSON(out)
 		}
+		out.RawByte(']')
 	}
-	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
@@ -149,7 +117,9 @@ func easyjson2d00218DecodeSubdApplicationCommonModels1(in *jlexer.Lexer, out *Th
 		case "slug":
 			out.Slug = string(in.String())
 		case "created":
-			out.Created = string(in.String())
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Created).UnmarshalJSON(data))
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -164,20 +134,14 @@ func easyjson2d00218EncodeSubdApplicationCommonModels1(out *jwriter.Writer, in T
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.ID != 0 {
+	{
 		const prefix string = ",\"id\":"
-		first = false
 		out.RawString(prefix[1:])
 		out.Int(int(in.ID))
 	}
 	{
 		const prefix string = ",\"title\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Title))
 	}
 	{
@@ -185,7 +149,7 @@ func easyjson2d00218EncodeSubdApplicationCommonModels1(out *jwriter.Writer, in T
 		out.RawString(prefix)
 		out.String(string(in.Author))
 	}
-	if in.Forum != "" {
+	{
 		const prefix string = ",\"forum\":"
 		out.RawString(prefix)
 		out.String(string(in.Forum))
@@ -195,20 +159,20 @@ func easyjson2d00218EncodeSubdApplicationCommonModels1(out *jwriter.Writer, in T
 		out.RawString(prefix)
 		out.String(string(in.Message))
 	}
-	if in.Votes != 0 {
+	{
 		const prefix string = ",\"votes\":"
 		out.RawString(prefix)
 		out.Int(int(in.Votes))
 	}
-	if in.Slug != "" {
+	{
 		const prefix string = ",\"slug\":"
 		out.RawString(prefix)
 		out.String(string(in.Slug))
 	}
-	if in.Created != "" {
+	{
 		const prefix string = ",\"created\":"
 		out.RawString(prefix)
-		out.String(string(in.Created))
+		out.Raw((in.Created).MarshalJSON())
 	}
 	out.RawByte('}')
 }

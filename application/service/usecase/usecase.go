@@ -3,25 +3,21 @@ package usecase
 import (
 	"subd/application/common/errors"
 	"subd/application/common/models"
-	"subd/application/user"
+	"subd/application/service"
 )
 
-type UserUseCase struct {
-	repos user.IRepositoryUser
+type ServiceUseCase struct {
+	repos service.IRepositoryService
 }
 
-func NewUserUseCase(repos user.IRepositoryUser) user.IUseCaseUser{
-	return &UserUseCase{repos: repos}
+func NewServiceUseCase(repos service.IRepositoryService) service.IUseCaseService {
+	return &ServiceUseCase{repos: repos}
 }
 
-func (u UserUseCase) GetUser(nickname string) (models.User, errors.Err) {
-	return u.repos.GetUser(nickname)
+func (s ServiceUseCase) GetStatus() (models.ServiceStatus, errors.Err) {
+	return s.repos.GetStatus()
 }
 
-func (u UserUseCase) UpdateUser(userNew models.User) (models.User, errors.Err) {
-	return u.repos.UpdateUser(userNew)
-}
-
-func (u UserUseCase) CreateUser(userNew models.User) (models.User, errors.Err) {
-	return userNew, u.repos.CreateUser(userNew)
+func (s ServiceUseCase) Clear() errors.Err {
+	return s.repos.Clear()
 }

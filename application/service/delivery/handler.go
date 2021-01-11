@@ -4,93 +4,37 @@ import (
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
 	"subd/application/common/errors"
-	"subd/application/common/models"
-	"subd/application/common/validation"
-	"subd/application/user"
+	"subd/application/service"
 )
 
-type UserHandler struct {
-	usecase user.IUseCaseUser
+type ServiceHandler struct {
+	usecase service.IUseCaseService
 }
 
-func NewUserHandler(router *fasthttprouter.Router, usecase user.IUseCaseUser) {
-	u := UserHandler{
+func NewUserHandler(router *fasthttprouter.Router, usecase service.IUseCaseService) {
+	s := ServiceHandler{
 		usecase: usecase,
 	}
-	router.POST("/user/:nickname/create", u.UserCreate)
-	router.GET("/user/:nickname/profile", u.UserGetProfile)
-	router.POST("/user/:nickname/profile", u.UserUpdateProfile)
+	router.POST("/api/service/clear", s.Clear)
+	router.GET("/api/service/status", s.Status)
 }
 
-func (u UserHandler) UserCreate(ctx *fasthttp.RequestCtx) {
-	var buf models.User
-
-	nick := ctx.UserValue("nickname").(string)
-	if err := validation.NicknameValid(nick); err != nil {
-		err.SetErrToCtx(ctx)
-		return
-	}
-	if err := buf.UnmarshalJSON(ctx.PostBody()); err != nil {
-		ctx.SetStatusCode(errors.BadRequestCode)
-		ctx.SetBody(errors.BadRequestMsg)
-		return
-	}
-	buf.Nickname = nick
-	userNew, err := u.usecase.CreateUser(buf)
+func (h ServiceHandler) Clear(ctx *fasthttp.RequestCtx) {
+	err := h.usecase.Clear()
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	resp, errMarshal := userNew.MarshalJSON()
-	if errMarshal != nil {
-		ctx.SetStatusCode(errors.ServerErrorCode)
-		ctx.SetBody(errors.ServerErrorMsg)
-		return
-	}
-	ctx.SetStatusCode(201)
-	ctx.SetBody(resp)
+	ctx.SetBodyString("Database cleanup was successful.")
 }
 
-func (u UserHandler) UserGetProfile(ctx *fasthttp.RequestCtx) {
-	nick := ctx.UserValue("nickname").(string)
-	if err := validation.NicknameValid(nick); err != nil {
-		err.SetErrToCtx(ctx)
-		return
-	}
-	userOld, err := u.usecase.GetUser(nick)
+func (h ServiceHandler) Status(ctx *fasthttp.RequestCtx) {
+	status, err := h.usecase.GetStatus()
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	resp, errMarshal := userOld.MarshalJSON()
-	if errMarshal != nil {
-		ctx.SetStatusCode(errors.ServerErrorCode)
-		ctx.SetBody(errors.ServerErrorMsg)
-		return
-	}
-	ctx.SetBody(resp)
-}
-
-func (u UserHandler) UserUpdateProfile(ctx *fasthttp.RequestCtx) {
-	var buf models.User
-
-	nick := ctx.UserValue("nickname").(string)
-	if err := validation.NicknameValid(nick); err != nil {
-		err.SetErrToCtx(ctx)
-		return
-	}
-	if err := buf.UnmarshalJSON(ctx.PostBody()); err != nil {
-		ctx.SetStatusCode(errors.BadRequestCode)
-		ctx.SetBody(errors.BadRequestMsg)
-		return
-	}
-	buf.Nickname = nick
-	userNew, err := u.usecase.UpdateUser(buf)
-	if err != nil {
-		err.SetErrToCtx(ctx)
-		return
-	}
-	resp, errMarshal := userNew.MarshalJSON()
+	resp, errMarshal := status.MarshalJSON()
 	if errMarshal != nil {
 		ctx.SetStatusCode(errors.ServerErrorCode)
 		ctx.SetBody(errors.ServerErrorMsg)

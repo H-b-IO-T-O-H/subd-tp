@@ -114,25 +114,17 @@ create or replace function update_votes()
     language plpgsql as
 $body$
 begin
-    if (TG_OP = 'INSERT') then
+    if TG_OP = 'INSERT' then
         if new.voice then
-            update threads
-            set votes = votes + 1
-            where id = new.thread_id;
+            update threads set votes = votes + 1 where id = new.thread_id;
         else
-            update threads
-            set votes = votes - 1
-            where id = new.thread_id;
+            update threads set votes = votes - 1 where id = new.thread_id;
         end if;
-    else
-        if new.voice then
-            update threads
-            set votes = votes + 2
-            where id = new.thread_id;
+    elseif TG_OP = 'UPDATE' then
+        if new.voice  then
+            update threads set votes = votes + 2 where id = new.thread_id;
         else
-            update threads
-            set votes = votes - 2
-            where id = new.thread_id;
+            update threads set votes = votes - 2 where id = new.thread_id;
         end if;
     end if;
     return new;

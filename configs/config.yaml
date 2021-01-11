@@ -5,3 +5,4 @@ db:
   user: postgres
   password: docker
   name: DbTp
+  max_conn: 100

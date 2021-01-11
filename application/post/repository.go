@@ -1,14 +1,13 @@
-package thread
+package post
 
 import (
 	"subd/application/common/errors"
 	"subd/application/common/models"
 )
 
-type IRepositoryThread interface {
-	CreateThread(thread models.Thread) (int, errors.Err)
-	GetBySlug(slug string) (models.Thread, errors.Err)
-	GetById(id int) (models.Thread, errors.Err)
-	UpdateBySlugOrId(threadNew models.Thread, slugId string) (models.Thread, errors.Err)
-	UpsertVote(vote models.Vote) (models.Thread, errors.Err)
+type IRepositoryPost interface {
+	CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err)
+	GetById(id int64) (models.Post, errors.Err)
+	GetFull(params models.PostGetParams) (models.PostFull, errors.Err)
+	UpdatePost(postUpdate models.PostUpdate) (models.Post, errors.Err)
 }
