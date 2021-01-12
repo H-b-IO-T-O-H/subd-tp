@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgtype"
 	"subd/application/common/errors"
 	"subd/application/common/models"
 	"subd/application/forum"
@@ -84,7 +85,7 @@ func (p pgRepository) GetUsers(query models.QueryParams) (models.UsersList, erro
 	usersList := models.UsersList{}
 	one := models.User{}
 	for rows.Next() {
-		if err := rows.Scan(&one.Nickname, &one.FullName,&one.About,  &one.Email); err != nil {
+		if err := rows.Scan(&one.Nickname, &one.FullName, &one.About, &one.Email); err != nil {
 			return models.UsersList{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: errors.ServerErrorMsg}
 		}
 		usersList = append(usersList, one)
@@ -123,10 +124,12 @@ func (p pgRepository) GetThreads(query models.QueryParams) (models.ThreadsList, 
 
 	threadsList := models.ThreadsList{}
 	one := models.Thread{}
+	nullSlug := &pgtype.Varchar{}
 	for rows.Next() {
-		if err := rows.Scan(&one.ID, &one.Title, &one.Author, &one.Forum, &one.Message, &one.Votes, &one.Slug, &one.Created); err != nil {
+		if err := rows.Scan(&one.ID, &one.Title, &one.Author, &one.Forum, &one.Message, &one.Votes, nullSlug, &one.Created); err != nil {
 			return models.ThreadsList{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: errors.ServerErrorMsg}
 		}
+		one.Slug = nullSlug.String
 		threadsList = append(threadsList, one)
 	}
 	return threadsList, nil

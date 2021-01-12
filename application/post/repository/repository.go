@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx"
 	"strconv"
 	"subd/application/common/errors"
@@ -112,17 +113,15 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.
 		return nil, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
 	}
 
-	timeCreate := time.Now()
+	timeCreate := strfmt.DateTime(time.Now())
 	buffer = ""
 	for i = range posts {
 		posts[i].Forum = thread.Forum
 		posts[i].Thread = thread.ID
-		if posts[i].Created.IsZero() {
-			posts[i].Created = timeCreate
-		}
+		posts[i].Created = timeCreate
 		buffer += fmt.Sprintf("('%d', '%s', '%s', '%t', '%s', '%d', '%s')",
 			posts[i].Parent, posts[i].Author, posts[i].Message, posts[i].IsEdited, posts[i].Forum,
-			posts[i].Thread, posts[i].Created.Format(time.RFC3339Nano))
+			posts[i].Thread, timeCreate)
 		if i < size-1 {
 			buffer += ", "
 		}

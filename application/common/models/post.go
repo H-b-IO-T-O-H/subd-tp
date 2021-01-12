@@ -1,16 +1,18 @@
 package models
 
-import "time"
+import (
+	"github.com/go-openapi/strfmt"
+)
 
 type Post struct {
-	ID       int64     `json:"id"`
-	Parent   int64     `json:"parent"`
-	Author   string    `json:"author"`
-	Message  string    `json:"message"`
-	IsEdited bool      `json:"isEdited"`
-	Forum    string    `json:"forum"`
-	Thread   int       `json:"thread"`
-	Created  time.Time `json:"created"`
+	ID       int64           `json:"id"`
+	Parent   int64           `json:"parent"`
+	Author   string          `json:"author"`
+	Message  string          `json:"message"`
+	IsEdited bool            `json:"isEdited"`
+	Forum    string          `json:"forum"`
+	Thread   int             `json:"thread"`
+	Created  strfmt.DateTime `json:"created"`
 }
 
 //easyjson:json

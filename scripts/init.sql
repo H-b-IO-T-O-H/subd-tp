@@ -41,7 +41,7 @@ create unlogged table threads
     message text   not null,
     votes   int         default 0,
     slug    citext      default null unique,
-    created timestamptz default current_timestamp
+    created timestamptz not null
 );
 
 create unlogged table posts
@@ -53,7 +53,7 @@ create unlogged table posts
     isEdited bool        default false,
     forum    citext not null references forums (slug),
     thread   int    not null references threads (id),
-    created  timestamptz default current_timestamp,
+    created  timestamp not null,
     path     int8[]      default array []::int[]
 );
 

@@ -29,17 +29,7 @@ func (p pgRepository) CreateUser(userNew models.User) errors.Err {
 	}
 	return nil
 }
-/*res, _ := p.db.Query("select * from users where nickname = $1", nickname)
-for res.Next() {
-	_ = res.Scan(&buf.Nickname, &buf.FullName, &buf.About, &buf.Email)
-	users = append(users, buf)
-}
-if users[0]
-res, _ = p.db.Query("select * from users where email = $1", email)
-for res.Next() {
-	_ = res.Scan(&buf.Nickname, &buf.FullName, &buf.About, &buf.Email)
-	users = append(users, buf)
-}*/
+
 func (p pgRepository) GetUsers(email string, nickname string) models.UsersList{
 	var (
 		buf models.User

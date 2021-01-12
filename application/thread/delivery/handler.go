@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"github.com/buaazp/fasthttprouter"
-	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 	"strconv"
 	"subd/application/common/errors"
@@ -37,15 +36,7 @@ func (t ThreadHandler) ThreadCreate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	buf.Forum = utils.GetSlugFromCtx(ctx)
-	wasEdited := false
-	if buf.Slug == "" {
-		buf.Slug = buf.Forum + uuid.New().String()
-		wasEdited = true
-	}
 	threadNew, err := t.usecase.CreateThread(buf)
-	if wasEdited {
-		threadNew.Slug = ""
-	}
 	if err != nil {
 		if err.Code() == errors.ConflictCode {
 			threadNew, err = t.usecase.GetBySlugOrId(buf.Slug, BySlug)

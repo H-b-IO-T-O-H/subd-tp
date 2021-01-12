@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgtype"
 	"strconv"
 	"subd/application/common/errors"
 	"subd/application/common/models"
@@ -24,9 +25,22 @@ func (p pgRepository) CreateThread(thread models.Thread) (models.Thread, errors.
 	if thread.Created.IsZero() {
 		thread.Created = time.Now()
 	}
-	query := fmt.Sprintf(` insert into threads (title, author, forum, message, slug, created)
+	isForumExist := true
+	if err := p.db.QueryRow("select exists(select 1 from forums where slug=$1)", thread.Forum).Scan(&isForumExist);
+		err != nil || !isForumExist {
+		return models.Thread{}, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.ForumNotFoundMsg}
+	}
+	query := ""
+	if thread.Slug == "" {
+		query = fmt.Sprintf(`insert into threads (title, author, forum, message, created)
+			values('%s','%s','%s','%s','%s') returning id, forum`,
+			thread.Title, thread.Author, thread.Forum, thread.Message, thread.Created.Format(time.RFC3339Nano))
+	} else {
+		query = fmt.Sprintf(`insert into threads (title, author, forum, message, slug, created)
 			values('%s','%s',(select slug as forum from forums where slug = '%s'),'%s','%s','%s') returning id, forum`,
-		thread.Title, thread.Author, thread.Forum, thread.Message, thread.Slug, thread.Created.Format(time.RFC3339Nano))
+			thread.Title, thread.Author, thread.Forum, thread.Message, thread.Slug, thread.Created.Format(time.RFC3339Nano))
+	}
+
 	err = p.db.QueryRow(query).Scan(&thread.ID, &thread.Forum)
 	if err != nil {
 		msg := err.Error()
@@ -44,8 +58,9 @@ func (p pgRepository) CreateThread(thread models.Thread) (models.Thread, errors.
 
 func (p pgRepository) GetBySlug(slug string) (models.Thread, errors.Err) {
 	buf := models.Thread{}
+	nullSlug := &pgtype.Varchar{}
 	err := p.db.QueryRow("select t.id, t.title, t.author, t.forum, t.message, t.votes, t.slug, t.created from threads as t where t.slug = $1", slug).
-		Scan(&buf.ID, &buf.Title, &buf.Author, &buf.Forum, &buf.Message, &buf.Votes, &buf.Slug, &buf.Created)
+		Scan(&buf.ID, &buf.Title, &buf.Author, &buf.Forum, &buf.Message, &buf.Votes, nullSlug, &buf.Created)
 	if err != nil {
 		msg := err.Error()
 		if errors.EmptyResult(msg) {
@@ -53,14 +68,16 @@ func (p pgRepository) GetBySlug(slug string) (models.Thread, errors.Err) {
 		}
 		return models.Thread{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
 	}
+	buf.Slug = nullSlug.String
 	//_ = p.db.QueryRow("select f.slug from forum f where f.slug = $1", buf.Forum).Scan(&buf.Forum)
 	return buf, nil
 }
 
 func (p pgRepository) GetById(id int) (models.Thread, errors.Err) {
 	buf := models.Thread{ID: id}
+	nullSlug := &pgtype.Varchar{}
 	err := p.db.QueryRow("select t.title, t.author, t.forum, t.message, t.votes, t.slug, t.created from threads as t where t.id = $1", id).
-		Scan(&buf.Title, &buf.Author, &buf.Forum, &buf.Message, &buf.Votes, &buf.Slug, &buf.Created)
+		Scan(&buf.Title, &buf.Author, &buf.Forum, &buf.Message, &buf.Votes, nullSlug, &buf.Created)
 	if err != nil {
 		msg := err.Error()
 		if errors.EmptyResult(msg) {
@@ -68,7 +85,7 @@ func (p pgRepository) GetById(id int) (models.Thread, errors.Err) {
 		}
 		return models.Thread{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
 	}
-
+	buf.Slug = nullSlug.String
 	return buf, nil
 }
 
