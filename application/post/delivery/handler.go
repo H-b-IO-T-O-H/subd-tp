@@ -37,17 +37,11 @@ func (p PostHandler) PostCreate(ctx *fasthttp.RequestCtx) {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	var resp[] byte
-	var errM error
-	if posts == nil || len(*posts) == 0 {
-		resp, _ = models.PostsList{}.MarshalJSON()
-	} else {
-		resp, errM = posts.MarshalJSON()
-		if errM != nil {
-			ctx.SetStatusCode(errors.ServerErrorCode)
-			ctx.SetBody(errors.ServerErrorMsg)
-			return
-		}
+	resp, errMarshal := posts.MarshalJSON()
+	if errMarshal != nil {
+		ctx.SetStatusCode(errors.ServerErrorCode)
+		ctx.SetBody(errors.ServerErrorMsg)
+		return
 	}
 	ctx.SetStatusCode(201)
 	ctx.SetBody(resp)

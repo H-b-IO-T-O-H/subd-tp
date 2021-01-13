@@ -40,7 +40,7 @@ func (p pgRepository) GetById(id int64) (models.Post, errors.Err) {
 	return buf, nil
 }
 
-func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (*models.PostsList, errors.Err) {
+func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err) {
 	var (
 		thread models.Thread
 		err    errors.Err
@@ -57,7 +57,7 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (*models
 		return nil, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.ThreadNotFoundMsg}
 	}
 	if size == 0 {
-		return nil, nil
+		return models.PostsList{}, nil
 	}
 	parents := make(map[int64]int)
 	id := 0
@@ -146,7 +146,7 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (*models
 		return nil, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(err.Error())}
 	}
 
-	return &posts, nil
+	return posts, nil
 }
 
 func (p pgRepository) UpdatePost(postUpdate models.PostUpdate) (models.Post, errors.Err) {
