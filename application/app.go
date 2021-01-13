@@ -13,19 +13,14 @@ import (
 	"subd/application/common/middlewares"
 	handler1 "subd/application/forum/delivery"
 	repos1 "subd/application/forum/repository"
-	useCase1 "subd/application/forum/usecase"
-	handler2 "subd/application/user/delivery"
-	repos2 "subd/application/user/repository"
-	useCase2 "subd/application/user/usecase"
-	handler3 "subd/application/thread/delivery"
-	repos3 "subd/application/thread/repository"
-	useCase3 "subd/application/thread/usecase"
-	handler4 "subd/application/service/delivery"
-	repos4 "subd/application/service/repository"
-	useCase4 "subd/application/service/usecase"
 	handler5 "subd/application/post/delivery"
 	repos5 "subd/application/post/repository"
-	useCase5 "subd/application/post/usecase"
+	handler4 "subd/application/service/delivery"
+	repos4 "subd/application/service/repository"
+	handler3 "subd/application/thread/delivery"
+	repos3 "subd/application/thread/repository"
+	handler2 "subd/application/user/delivery"
+	repos2 "subd/application/user/repository"
 	"syscall"
 	"time"
 )
@@ -87,24 +82,24 @@ func initRouting(a *App) *fasthttprouter.Router {
 	router := fasthttprouter.New()
 	router.GET("/health", healthCheck)
 	forumRepos := repos1.NewPgRepository(a.db)
-	forumCase := useCase1.NewForumUseCase(forumRepos)
-	handler1.NewForumHandler(router, forumCase)
+	//forumCase := useCase1.NewForumUseCase(forumRepos)
+	handler1.NewForumHandler(router, forumRepos)
 
 	userRepos := repos2.NewPgRepository(a.db)
-	userCase := useCase2.NewUserUseCase(userRepos)
-	handler2.NewUserHandler(router, userCase)
+	//userCase := useCase2.NewUserUseCase(userRepos)
+	handler2.NewUserHandler(router, userRepos)
 
 	threadRepos := repos3.NewPgRepository(a.db)
-	threadCase := useCase3.NewThreadUseCase(threadRepos)
-	handler3.NewThreadHandler(router, threadCase)
+	//threadCase := useCase3.NewThreadUseCase(threadRepos)
+	handler3.NewThreadHandler(router, threadRepos)
 
 	serviceRepos := repos4.NewPgRepository(a.db)
-	serviceCase := useCase4.NewServiceUseCase(serviceRepos)
-	handler4.NewUserHandler(router, serviceCase)
+	//serviceCase := useCase4.NewServiceUseCase(serviceRepos)
+	handler4.NewUserHandler(router, serviceRepos)
 
 	postRepos := repos5.NewPgRepository(a.db, userRepos, forumRepos, threadRepos)
-	postCase := useCase5.NewPostUseCase(postRepos)
-	handler5.NewPostHandler(router, postCase)
+	//postCase := useCase5.NewPostUseCase(postRepos)
+	handler5.NewPostHandler(router, postRepos)
 	return router
 }
 

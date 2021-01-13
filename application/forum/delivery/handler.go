@@ -10,12 +10,13 @@ import (
 )
 
 type ForumHandler struct {
-	usecase forum.IUseCaseForum
+	//usecase forum.IUseCaseForum
+	repos forum.IRepositoryForum
 }
 
-func NewForumHandler(router *fasthttprouter.Router, usecase forum.IUseCaseForum) {
+func NewForumHandler(router *fasthttprouter.Router, repos forum.IRepositoryForum) {
 	f := ForumHandler{
-		usecase: usecase,
+		repos: repos,
 	}
 	router.POST("/api/forum/:slug", f.ForumCreate)
 	router.GET("/api/forum/:slug/details", f.ForumGetDetails)
@@ -33,10 +34,10 @@ func (f ForumHandler) ForumCreate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	forumNew, err := f.usecase.CreateForum(buf)
+	forumNew, err := f.repos.CreateForum(buf)
 	if err != nil {
 		if err.Code() == errors.ConflictCode {
-			forumNew, err = f.usecase.GetBySlug(buf.Slug)
+			forumNew, err = f.repos.GetBySlug(buf.Slug)
 			ctx.SetStatusCode(errors.ConflictCode)
 		} else {
 			err.SetErrToCtx(ctx)
@@ -64,7 +65,7 @@ func (f ForumHandler) ForumGetDetails(ctx *fasthttp.RequestCtx) {
 	slug := utils.GetSlugFromCtx(ctx)
 	//TODO: slug-pattern ???
 
-	forumOld, err := f.usecase.GetBySlug(slug)
+	forumOld, err := f.repos.GetBySlug(slug)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -80,7 +81,7 @@ func (f ForumHandler) ForumGetDetails(ctx *fasthttp.RequestCtx) {
 
 func (f ForumHandler) ForumGetThreads(ctx *fasthttp.RequestCtx) {
 	query := utils.MakeQuery(ctx)
-	threadsList, err := f.usecase.GetThreads(query)
+	threadsList, err := f.repos.GetThreads(query)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -96,7 +97,7 @@ func (f ForumHandler) ForumGetThreads(ctx *fasthttp.RequestCtx) {
 
 func (f ForumHandler) ForumGetUsers(ctx *fasthttp.RequestCtx) {
 	query := utils.MakeQuery(ctx)
-	usersList, err := f.usecase.GetUsers(query)
+	usersList, err := f.repos.GetUsers(query)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return

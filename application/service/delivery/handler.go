@@ -8,19 +8,20 @@ import (
 )
 
 type ServiceHandler struct {
-	usecase service.IUseCaseService
+	//usecase service.IUseCaseService
+	repos service.IRepositoryService
 }
 
-func NewUserHandler(router *fasthttprouter.Router, usecase service.IUseCaseService) {
+func NewUserHandler(router *fasthttprouter.Router, repos service.IRepositoryService) {
 	s := ServiceHandler{
-		usecase: usecase,
+		repos: repos,
 	}
 	router.POST("/api/service/clear", s.Clear)
 	router.GET("/api/service/status", s.Status)
 }
 
 func (h ServiceHandler) Clear(ctx *fasthttp.RequestCtx) {
-	err := h.usecase.Clear()
+	err := h.repos.Clear()
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -29,7 +30,7 @@ func (h ServiceHandler) Clear(ctx *fasthttp.RequestCtx) {
 }
 
 func (h ServiceHandler) Status(ctx *fasthttp.RequestCtx) {
-	status, err := h.usecase.GetStatus()
+	status, err := h.repos.GetStatus()
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return

@@ -10,12 +10,13 @@ import (
 )
 
 type UserHandler struct {
-	usecase user.IUseCaseUser
+	//usecase user.IUseCaseUser
+	repos user.IRepositoryUser
 }
 
-func NewUserHandler(router *fasthttprouter.Router, usecase user.IUseCaseUser) {
+func NewUserHandler(router *fasthttprouter.Router, repos user.IRepositoryUser) {
 	u := UserHandler{
-		usecase: usecase,
+		repos: repos,
 	}
 	router.POST("/api/user/:nickname/create", u.UserCreate)
 	router.GET("/api/user/:nickname/profile", u.UserGetProfile)
@@ -36,10 +37,10 @@ func (u UserHandler) UserCreate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	buf.Nickname = nick
-	userNew, err := u.usecase.CreateUser(buf)
+	err := u.repos.CreateUser(buf)
 	if err != nil {
 		if err.Code() == errors.ConflictCode {
-			existingUsers := u.usecase.GetUsersOnConflict(buf.Email, buf.Nickname)
+			existingUsers := u.repos.GetUsers(buf.Email, buf.Nickname)
 			resp, _ := existingUsers.MarshalJSON()
 			ctx.SetStatusCode(errors.ConflictCode)
 			ctx.SetBody(resp)
@@ -48,7 +49,7 @@ func (u UserHandler) UserCreate(ctx *fasthttp.RequestCtx) {
 		}
 		return
 	}
-	resp, errMarshal := userNew.MarshalJSON()
+	resp, errMarshal := buf.MarshalJSON()
 	if errMarshal != nil {
 		ctx.SetStatusCode(errors.ServerErrorCode)
 		ctx.SetBody(errors.ServerErrorMsg)
@@ -64,7 +65,7 @@ func (u UserHandler) UserGetProfile(ctx *fasthttp.RequestCtx) {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	userOld, err := u.usecase.GetUser(nick)
+	userOld, err := u.repos.GetUser(nick)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -92,7 +93,7 @@ func (u UserHandler) UserUpdateProfile(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	buf.Nickname = nick
-	userNew, err := u.usecase.UpdateUser(buf)
+	userNew, err := u.repos.UpdateUser(buf)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return

@@ -40,7 +40,7 @@ func (p pgRepository) GetById(id int64) (models.Post, errors.Err) {
 	return buf, nil
 }
 
-func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err) {
+func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (*models.PostsList, errors.Err) {
 	var (
 		thread models.Thread
 		err    errors.Err
@@ -54,17 +54,17 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.
 		thread, err = p.reposThread.GetBySlug(slugId)
 	}
 	if err != nil {
-		return models.PostsList{}, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.ThreadNotFoundMsg}
+		return nil, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.ThreadNotFoundMsg}
 	}
 	if size == 0 {
-		return models.PostsList{}, nil
+		return nil, nil
 	}
 	parents := make(map[int64]int)
 	id := 0
 	for _, single := range posts {
 		if _, exist := parents[single.Parent]; !exist && single.Parent != 0 {
 			if err := p.db.QueryRow(`select p.thread from posts p where p.id = $1`, single.Parent).Scan(&id); err != nil || id != thread.ID {
-				return models.PostsList{}, errors.RespErr{StatusCode: errors.ConflictCode, Message: errors.PostNotFoundMsg}
+				return nil, errors.RespErr{StatusCode: errors.ConflictCode, Message: errors.PostNotFoundMsg}
 			}
 			parents[single.Parent] = thread.ID
 		}
@@ -108,7 +108,7 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.
 	if _, err := p.db.Exec(query); err != nil {
 		msg := err.Error()
 		if errors.UserNotFound(msg) {
-			return models.PostsList{}, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.UserNotFoundMsg}
+			return nil, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.UserNotFoundMsg}
 		}
 		return nil, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
 	}
@@ -132,9 +132,9 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.
 	if res2, err2 := p.db.Query(sql); err2 != nil {
 		msg := err2.Error()
 		if errors.UserNotFound(msg) {
-			return models.PostsList{}, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.UserNotFoundMsg}
+			return nil, errors.RespErr{StatusCode: errors.NotFoundCode, Message: errors.UserNotFoundMsg}
 		}
-		return models.PostsList{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
+		return nil, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(msg)}
 	} else {
 		i = 0
 		for res2.Next() {
@@ -143,10 +143,10 @@ func (p pgRepository) CreatePost(posts models.PostsList, slugId string) (models.
 		}
 	}
 	if _, err := p.db.Exec("update forums set posts = posts + $1 where slug = $2", size, thread.Forum); err != nil {
-		return models.PostsList{}, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(err.Error())}
+		return nil, errors.RespErr{StatusCode: errors.ServerErrorCode, Message: []byte(err.Error())}
 	}
 
-	return posts, nil
+	return &posts, nil
 }
 
 func (p pgRepository) UpdatePost(postUpdate models.PostUpdate) (models.Post, errors.Err) {

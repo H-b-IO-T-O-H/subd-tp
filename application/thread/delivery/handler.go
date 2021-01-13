@@ -13,12 +13,13 @@ import (
 const BySlug = -1
 
 type ThreadHandler struct {
-	usecase thread.IUseCaseThread
+	//usecase thread.IUseCaseThread
+	repos thread.IRepositoryThread
 }
 
-func NewThreadHandler(router *fasthttprouter.Router, usecase thread.IUseCaseThread) {
+func NewThreadHandler(router *fasthttprouter.Router, repos thread.IRepositoryThread) {
 	f := ThreadHandler{
-		usecase: usecase,
+		repos: repos,
 	}
 	router.POST("/api/forum/:slug/create", f.ThreadCreate)
 	router.GET("/api/thread/:slug_or_id/details", f.ThreadDetails)
@@ -36,10 +37,10 @@ func (t ThreadHandler) ThreadCreate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	buf.Forum = utils.GetSlugFromCtx(ctx)
-	threadNew, err := t.usecase.CreateThread(buf)
+	threadNew, err := t.repos.CreateThread(buf)
 	if err != nil {
 		if err.Code() == errors.ConflictCode {
-			threadNew, err = t.usecase.GetBySlugOrId(buf.Slug, BySlug)
+			threadNew, err = t.repos.GetBySlug(buf.Slug)
 			ctx.SetStatusCode(errors.ConflictCode)
 		} else {
 			err.SetErrToCtx(ctx)
@@ -65,9 +66,9 @@ func (t ThreadHandler) ThreadDetails(ctx *fasthttp.RequestCtx) {
 	)
 	slugId := utils.GetSlugOrIdFromCtx(ctx)
 	if id, _ := strconv.Atoi(slugId); id != 0 {
-		threadOld, err = t.usecase.GetBySlugOrId("", id)
+		threadOld, err = t.repos.GetById(id)
 	} else {
-		threadOld, err = t.usecase.GetBySlugOrId(slugId, BySlug)
+		threadOld, err = t.repos.GetBySlug(slugId)
 	}
 	if err != nil {
 		err.SetErrToCtx(ctx)
@@ -91,7 +92,7 @@ func (t ThreadHandler) ThreadUpdate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	slugId := utils.GetSlugOrIdFromCtx(ctx)
-	threadNew, err := t.usecase.UpdateBySlugOrId(buf, slugId)
+	threadNew, err := t.repos.UpdateBySlugOrId(buf, slugId)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -113,7 +114,7 @@ func (t ThreadHandler) ThreadVote(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	buf.SlugOrId = utils.GetSlugOrIdFromCtx(ctx)
-	threadVoted, err := t.usecase.CreateVote(buf)
+	threadVoted, err := t.repos.UpsertVote(buf)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -133,7 +134,7 @@ func (t ThreadHandler) ThreadPosts(ctx *fasthttp.RequestCtx) {
 	if query.Sort == "" {
 		query.Sort = utils.Flat
 	}
-	posts, err := t.usecase.GetThreadPosts(query)
+	posts, err := t.repos.GetThreadPosts(query)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return

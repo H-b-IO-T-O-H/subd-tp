@@ -11,12 +11,13 @@ import (
 )
 
 type PostHandler struct {
-	usecase post.IUseCasePost
+	//usecase post.IUseCasePost
+	repos post.IRepositoryPost
 }
 
-func NewPostHandler(router *fasthttprouter.Router, usecase post.IUseCasePost) {
+func NewPostHandler(router *fasthttprouter.Router, repos post.IRepositoryPost) {
 	f := PostHandler{
-		usecase: usecase,
+		repos: repos,
 	}
 	router.POST("/api/thread/:slug_or_id/create", f.PostCreate)
 	router.GET("/api/post/:id/details", f.PostDetails)
@@ -31,16 +32,22 @@ func (p PostHandler) PostCreate(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	slugId := utils.GetSlugOrIdFromCtx(ctx)
-	posts, err := p.usecase.CreatePost(buf, slugId)
+	posts, err := p.repos.CreatePost(buf, slugId)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
 	}
-	resp, errMarshal := posts.MarshalJSON()
-	if errMarshal != nil {
-		ctx.SetStatusCode(errors.ServerErrorCode)
-		ctx.SetBody(errors.ServerErrorMsg)
-		return
+	var resp[] byte
+	var errM error
+	if posts == nil || len(*posts) == 0 {
+		resp, _ = models.PostsList{}.MarshalJSON()
+	} else {
+		resp, errM = posts.MarshalJSON()
+		if errM != nil {
+			ctx.SetStatusCode(errors.ServerErrorCode)
+			ctx.SetBody(errors.ServerErrorMsg)
+			return
+		}
 	}
 	ctx.SetStatusCode(201)
 	ctx.SetBody(resp)
@@ -58,7 +65,7 @@ func (p PostHandler) PostDetails(ctx *fasthttp.RequestCtx) {
 			getParams.HaveThread = true
 		}
 	}
-	postOld, err := p.usecase.GetPost(getParams)
+	postOld, err := p.repos.GetFull(getParams)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return
@@ -81,7 +88,7 @@ func (p PostHandler) PostUpdate(ctx *fasthttp.RequestCtx) {
 		ctx.SetBody(errors.BadRequestMsg)
 		return
 	}
-	postUpdate, err := p.usecase.UpdatePost(buf)
+	postUpdate, err := p.repos.UpdatePost(buf)
 	if err != nil {
 		err.SetErrToCtx(ctx)
 		return

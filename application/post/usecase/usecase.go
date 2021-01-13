@@ -18,7 +18,7 @@ func (p PostUseCase) GetPost(params models.PostGetParams) (models.PostFull, erro
 	return p.reposPost.GetFull(params)
 }
 
-func (p PostUseCase) CreatePost(posts models.PostsList, slugId string) (models.PostsList, errors.Err) {
+func (p PostUseCase) CreatePost(posts models.PostsList, slugId string) (*models.PostsList, errors.Err) {
 	return p.reposPost.CreatePost(posts, slugId)
 }
 
